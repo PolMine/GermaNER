@@ -1,0 +1,95 @@
+---
+title: "The 'GermaNER'-package"
+author: "Andreas Blätte (andreas.blaette@uni-due.de)"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+bibliography: bibliography.bibtex
+vignette: >
+  %\VignetteIndexEntry{The GermaNER-package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+## About GermaNER
+
+See [@Benikova2015]!
+
+
+## A Quick Example
+
+```{r}
+library(GermaNER)
+library(polmineR)
+library(magrittr)
+library(cwbtools)
+```
+
+```{r}
+am <- corpus("GERMAPARLMINI") %>%
+  subset(speaker == "Angela Dorothea Merkel" & date == "2009-11-10")
+```
+
+```{r}
+am_ne <- germaner_get_named_entities(am)
+```
+
+The resulting `data.frame` follows ConLL conventions.
+
+```{r}
+head(am_ne)
+```
+
+Using the `conll_get_regions` function, we can get the regions.
+
+```{r}
+ne_regions <- conll_get_regions(am_ne)
+```
+
+
+```{r}
+head(ne_regions)
+```
+
+```{r}
+corpus_copy(
+  corpus = "GERMAPARLMINI", registry_dir = registry(),
+  verbose = interactive(), progress = interactive()
+)
+```
+
+```{r}
+s_attribute_encode(
+  values = ne_regions[["ne_type"]],
+  data_dir = cwbtools::registry_file_parse(corpus = "GERMAPARLMINI")[["home"]],
+  s_attribute = "ne",
+  corpus = "GERMAPARLMINI",
+  region_matrix = as.matrix(ne_regions[, c("cpos_left", "cpos_right")]),
+  method = "R",
+  registry_dir = Sys.getenv("CORPUS_REGISTRY"),
+  encoding = "UTF-8",
+  delete = TRUE,
+  verbose = TRUE
+)
+```
+
+```{r}
+s_attributes("GERMAPARLMINI")
+```
+
+A first test is whether we can create a subcorpus with the newly annotated regions
+
+```{r}
+corpus("GERMAPARLMINI") %>% subset(grepl("^.*$", ne))
+```
+
+Should be identical with the regions in the table!
+
+```{r}
+sum(ne_regions[["cpos_right"]] - ne_regions[["cpos_left"]]) + nrow(ne_regions)
+```
+
+```{r}
+count("GERMAPARLMINI", query = '<ne> []* <ne>', cqp = TRUE)
+```
+
+## Bibliography

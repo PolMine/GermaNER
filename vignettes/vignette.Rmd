@@ -1,0 +1,152 @@
+---
+title: "The 'GermaNER'-package"
+author: "Andreas Blätte (andreas.blaette@uni-due.de)"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+bibliography: bibliography.bibtex
+vignette: >
+  %\VignetteIndexEntry{The GermaNER-package}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
+---
+
+## About GermaNER
+
+See [@Benikova2015]!
+
+
+## Getting Named Entities
+
+```{r load_packages}
+library(GermaNER)
+library(polmineR)
+library(magrittr)
+library(cwbtools)
+```
+
+```{r get_germaner}
+if (!file.exists(germaner_jar_filename())) germaner_download_jar()
+```
+
+```{r create_subcorpus}
+am <- corpus("GERMAPARLMINI") %>%
+  subset(speaker == "Angela Dorothea Merkel" & date == "2009-11-10")
+```
+
+```{r get_named_entities}
+am_ne <- germaner_get_named_entities(am)
+```
+
+The resulting `data.frame` follows ConLL conventions.
+
+```{r ne_show_head}
+head(am_ne)
+```
+
+
+## Encoding Named Entities
+
+Using the `conll_get_regions` function, we can get the regions.
+
+```{r get_regions}
+ne_regions <- conll_get_regions(am_ne)
+```
+
+
+```{r inspect_regions}
+head(ne_regions)
+```
+
+```{r copy_corpus, eval = FALSE}
+corpus_copy(
+  corpus = "GERMAPARLMINI", registry_dir = registry(),
+  verbose = interactive(), progress = interactive()
+)
+```
+
+```{r encode_ne}
+s_attribute_encode(
+  values = ne_regions[["ne_type"]],
+  data_dir = cwbtools::registry_file_parse(corpus = "GERMAPARLMINI")[["home"]],
+  s_attribute = "ne",
+  corpus = "GERMAPARLMINI",
+  region_matrix = as.matrix(ne_regions[, c("cpos_left", "cpos_right")]),
+  method = "R",
+  registry_dir = Sys.getenv("CORPUS_REGISTRY"),
+  encoding = "UTF-8",
+  delete = TRUE,
+  verbose = TRUE
+)
+```
+
+```{r inspect_s_attributes}
+s_attributes("GERMAPARLMINI")
+```
+
+
+```{r inspect_s_attribute_values}
+s_attributes("GERMAPARLMINI", "ne")
+```
+
+
+## Checking structural annotation of named entities
+
+### Initial tests
+
+A first test is whether we can create a subcorpus with the newly annotated regions
+
+```{r create_ne_subcorpus}
+corpus("GERMAPARLMINI") %>% subset(grepl("^.*$", ne))
+```
+
+Should be identical with the regions in the table!
+
+```{r check_ne_subcorpus_size}
+sum(ne_regions[["cpos_right"]] - ne_regions[["cpos_left"]]) + nrow(ne_regions)
+```
+
+```{r}
+registry_reset()
+```
+
+
+### Counting
+
+```{r ne_count}
+count("GERMAPARLMINI", query = '/region[ne]', cqp = TRUE)
+count("GERMAPARLMINI", query = '/region[ne,a]::a.ne="ORG"', cqp = TRUE)
+count("GERMAPARLMINI", query = '/region[ne,a]::a.ne="PER"', cqp = TRUE)
+count("GERMAPARLMINI", query = '/region[ne,a]::a.ne="LOC"', cqp = TRUE)
+count("GERMAPARLMINI", query = '/region[ne,a]::a.ne="OTH"', cqp = TRUE)
+```
+
+
+### Keywords-in-context
+
+```{r kwic_all_ne, render = knit_print}
+kwic("GERMAPARLMINI", query = '<ne> []* </ne>', cqp = TRUE)
+```
+
+```{r kwic_all_ne_alternative_cqp_syntax, render = knit_print}
+kwic("GERMAPARLMINI", query = '/region[ne]', cqp = TRUE)
+```
+
+```{r kwic_ne_persons, render = knit_print}
+kwic("GERMAPARLMINI", query = '/region[ne,a]::a.ne="PER";', cqp = TRUE)
+```
+
+
+```{r kwic_ne_organisations, render = knit_print}
+kwic("GERMAPARLMINI", query = '/region[ne,a]::a.ne="ORG";', cqp = TRUE)
+```
+
+
+```{r kwic_ne_locations, render = knit_print}
+kwic("GERMAPARLMINI", query = '/region[ne,a]::a.ne="LOC";', cqp = TRUE)
+```
+
+
+
+## Bibliography

@@ -1,0 +1,23 @@
+Package: GermaNER
+Type: Package
+Title: R Wrapper for GermaNER
+Version: 0.0.2
+Date: 2020-03-05
+Authors@R: person("Andreas", "Blaette", role = c("aut", "cre"), email = "andreas.blaette@uni-due.de")
+Description: R Wrapper for GermaNER.
+Depends:
+    R (>= 3.5.0)
+Imports:
+    data.table,
+    polmineR
+Suggests:
+    cwbtools,
+    magrittr,
+    knitr
+VignetteBuilder: knitr
+LazyData: yes
+License: GPL-3
+Encoding: UTF-8
+Collate:
+    'GermaNER.R'
+RoxygenNote: 7.0.2

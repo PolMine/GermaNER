@@ -1,0 +1,36 @@
+language: r
+cache: packages
+
+addons:
+  apt:
+    packages:
+    - libxml2-dev
+    - libgsl-dev
+    - r-cran-rjava
+
+
+before_install:
+  - Rscript -e 'install.packages("rmarkdown")'
+  - Rscript -e 'install.packages("rJava")'
+
+r_packages:
+  - plyr
+  - tm
+  - tidytext
+  - rJava
+  - covr
+  - rmarkdown
+  - webshot
+
+r_github_packages:
+  - r-lib/covr
+
+warnings_are_errors: false
+
+notifications:
+  email:
+  on_success: change
+  on_failure: change
+
+after_success:
+  - Rscript -e 'covr::codecov(type = "all", token = "dac888c9-5686-4485-9e64-23a7db808143")'
